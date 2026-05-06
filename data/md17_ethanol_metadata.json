@@ -1,0 +1,32 @@
+{
+  "source_file": "data/md17_ethanol.npz",
+  "frames": 555092,
+  "atoms": 9,
+  "atomic_numbers": [
+    6,
+    6,
+    8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "coordinate_shape": [
+    555092,
+    9,
+    3
+  ],
+  "energy_shape": [
+    555092
+  ],
+  "force_shape": [
+    555092,
+    9,
+    3
+  ],
+  "energy_mean": -97195.9296875,
+  "energy_std": 4.192015171051025,
+  "force_rms": 26.257034301757812
+}

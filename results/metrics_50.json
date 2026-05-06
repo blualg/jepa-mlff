@@ -1,0 +1,14 @@
+{
+  "scratch": {
+    "energy_mae": 4.266453125,
+    "force_mae": 1.457940134048462,
+    "force_rmse": 1.9633407144546509,
+    "rollout_drift_proxy": 1.4579401016235352
+  },
+  "jepa": {
+    "energy_mae": 1.058078125,
+    "force_mae": 1.2744482069015504,
+    "force_rmse": 1.665827880859375,
+    "rollout_drift_proxy": 1.2744481563568115
+  }
+}

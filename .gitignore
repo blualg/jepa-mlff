@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Local data and model artifacts
+data/*.npz
+checkpoints/
+
+# Keep the paper's curated 50-epoch result artifacts, ignore ad hoc outputs.
+results/*
+!results/metrics_50.json
+!results/force_scatter_50.png
+!results/loss_curves_50.png
+
+# LaTeX build products
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.synctex.gz
+paper/*.docx
+paper/rendered_docx/
+paper/rendered_latex_pdf/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
