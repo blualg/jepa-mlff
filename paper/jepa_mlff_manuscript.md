@@ -8,7 +8,7 @@
 
 **Unpublished research manuscript draft.** This manuscript is formatted in the approximate order recommended for Nature submissions: title, authors, affiliations, bold first paragraph, main text, references, figure legends, methods, data availability, code availability and declarations.
 
-**Machine-learning force fields (MLFFs) can approach quantum-mechanical-level accuracy at a computational cost closer to classical force fields, but they remain constrained by the expense of labelled energy and force data. Here we test whether joint-embedding predictive architecture (JEPA) pretraining, adapted to atomistic trajectories, can improve a conservative neural molecular force field. Using the ethanol trajectory from the MD17 benchmark, we pretrained a SchNet-like continuous-filter encoder to predict latent embeddings of masked atomic environments at neighbouring time steps, then fine-tuned the same encoder to predict molecular energies and forces. In a 2,000/500/500 chronological train/validation/test split trained for 50 epochs, JEPA initialization reduced test force RMSE from 1.963 to 1.666 in native MD17 force units and reduced energy MAE from 4.266 to 1.058 in native MD17 energy units relative to a scratch baseline. These preliminary results suggest that latent predictive pretraining can transfer useful dynamical structure from unlabelled molecular trajectories into supervised neural force-field learning.**
+**Machine-learning force fields (MLFFs) can approach quantum-mechanical-level accuracy at a computational cost closer to classical force fields, but they remain constrained by the expense of labelled energy and force data. Here we test whether joint-embedding predictive architecture (JEPA)-style pretraining, adapted to atomistic trajectories, can improve a conservative neural molecular force field. Using the ethanol trajectory from the MD17 benchmark, we pretrained a SchNet-like continuous-filter encoder to predict future latent atom embeddings from embedding-masked molecular contexts, then fine-tuned the same encoder to predict molecular energies and forces. In a 2,000/500/500 chronological train/validation/test split trained for 50 epochs, JEPA-style initialization reduced test force RMSE from 1.963 to 1.666 in native MD17 force units and reduced energy MAE from 4.266 to 1.058 in native MD17 energy units relative to a scratch baseline. These preliminary results suggest that latent predictive pretraining can transfer useful dynamical structure from unlabelled molecular trajectories into supervised neural force-field learning.**
 
 ## Main
 
@@ -16,7 +16,7 @@ Molecular dynamics (MD) requires a potential energy surface whose gradients prod
 
 Despite these advances, most neural force-field training remains predominantly supervised. This is restrictive because high-quality quantum-mechanical energy and force labels require expensive electronic-structure calculations, whereas molecular geometries and trajectories from classical force fields, lower-level simulations or existing archives are easier to collect at scale. Self-supervised learning offers a possible route around this bottleneck by learning from coordinates before using scarce high-level labels. In the MD17 experiment below, the pretraining stage deliberately treats the available trajectory coordinates as unlabelled and ignores the accompanying energies and forces until fine-tuning. In vision, joint-embedding predictive architectures learn representations by predicting latent target embeddings from partial context rather than reconstructing raw pixels [6]. An analogous principle is appealing for molecules: atomic coordinates are continuous, noisy, symmetry-constrained and often locally ambiguous, but latent neighbourhood representations may capture stable dynamical regularities.
 
-Here we implemented an atomistic JEPA pretraining workflow for a small-molecule neural force field. The model uses a compact SchNet-like continuous-filter encoder over atomic numbers and pairwise distances. The energy is invariant to rigid translations and rotations, and forces are obtained as negative coordinate gradients of the scalar energy, making the learned force field conservative and force predictions equivariant under rigid rotations. During pretraining, an online encoder receives a corrupted molecular frame in which a random subset of atoms is replaced by a learned mask token. An exponential-moving-average target encoder receives the uncorrupted frame at the next trajectory step. A predictor network is trained to match the target latent embeddings on masked atoms. The pretrained encoder is then fine-tuned using energy and force labels.
+Here we implemented an atomistic JEPA-style pretraining workflow for a small-molecule neural force field. The model uses a compact SchNet-like continuous-filter encoder over atomic numbers and pairwise distances. The energy is invariant to rigid translations and rotations, and forces are obtained as negative coordinate gradients of the scalar energy, making the learned force field conservative and force predictions equivariant under rigid rotations. During pretraining, an online encoder receives a molecular frame in which a random subset of initial atom embeddings is replaced by a learned mask token while coordinates remain visible. An exponential-moving-average target encoder receives the uncorrupted frame at the next trajectory step. A predictor network is trained to match the target latent embeddings on masked atoms. The pretrained encoder is then fine-tuned using energy and force labels.
 
 ### Mathematical formulation
 
@@ -32,7 +32,7 @@ where \(Z \in \mathbb{N}^N\) are atomic numbers for \(N\) atoms, \(R_t \in \math
 H_t = f_\theta(Z, R_t) \in \mathbb{R}^{N \times d}.
 ```
 
-For JEPA pretraining, we sample a binary atom mask \(m \in \{0,1\}^N\), where \(m_i=1\) indicates that atom \(i\) is hidden from the context branch. The online encoder receives a corrupted context frame \(\tilde{x}_t=(Z,\tilde{R}_t,m)\), implemented by replacing masked atom embeddings with a learned mask token, while the target encoder receives a clean future frame \(x_{t+\Delta}\). With online encoder \(f_\theta\), target encoder \(f_{\bar{\theta}}\), predictor \(q_\phi\) and stop-gradient operator \(\operatorname{sg}(\cdot)\), the pretraining loss is
+For JEPA-style pretraining, we sample a binary atom mask \(m \in \{0,1\}^N\), where \(m_i=1\) indicates that atom \(i\) is masked in the context branch. The online encoder receives a corrupted context frame \(\tilde{x}_t=(Z,\tilde{R}_t,m)\), implemented by replacing masked atom embeddings with a learned mask token, while the target encoder receives a clean future frame \(x_{t+\Delta}\). With online encoder \(f_\theta\), target encoder \(f_{\bar{\theta}}\), predictor \(q_\phi\) and stop-gradient operator \(\operatorname{sg}(\cdot)\), the pretraining loss is
 
 ```math
 \mathcal{L}_{\mathrm{JEPA}}(\theta,\phi)
@@ -92,22 +92,22 @@ Fine-tuning minimizes a force-dominant supervised objective,
 
 with \(\lambda_E=0.05\) and \(\lambda_F=1.0\). Evaluation reports energy MAE, force MAE and force RMSE on the held-out test trajectory frames.
 
-We evaluated the workflow on ethanol from MD17, a standard DFT molecular dynamics benchmark containing atomic numbers, coordinates, energies and forces. The experiment used 2,000 frames for training, 500 for validation and 500 for testing. Both scratch and JEPA-initialized force fields were trained for 50 epochs with identical supervised hyperparameters. The scratch baseline reached a best validation force RMSE of 1.596 and a final test force RMSE of 1.963. The JEPA-initialized model reached a best validation force RMSE of 1.322 and a final test force RMSE of 1.666. On the test set, JEPA pretraining improved force RMSE by 15.2%, force MAE by 12.6% and energy MAE by 75.2% relative to the scratch baseline (Table 1).
+We evaluated the workflow on ethanol from MD17, a standard DFT molecular dynamics benchmark containing atomic numbers, coordinates, energies and forces. The experiment used 2,000 frames for training, 500 for validation and 500 for testing. Both scratch and JEPA-style-initialized force fields were trained for 50 epochs with identical supervised hyperparameters. The scratch baseline reached a best validation force RMSE of 1.596 and a final test force RMSE of 1.963. The JEPA-style-initialized model reached a best validation force RMSE of 1.322 and a final test force RMSE of 1.666. On the test set, JEPA-style pretraining improved force RMSE by 15.2%, force MAE by 12.6% and energy MAE by 75.2% relative to the scratch baseline (Table 1).
 
-The representation pretraining itself converged rapidly. JEPA validation loss reached its minimum at epoch 9 (0.00119) and subsequently increased, indicating that the best self-supervised checkpoint may occur well before the end of a fixed 50-epoch pretraining schedule. This suggests that early stopping or a validation-selected JEPA checkpoint should be included in larger studies. Nevertheless, the final JEPA checkpoint still transferred effectively to supervised force-field training in this single-molecule experiment.
+The representation pretraining itself converged rapidly. JEPA-style validation loss reached its minimum at epoch 9 (0.00119) and subsequently increased, indicating that the best self-supervised checkpoint may occur well before the end of a fixed 50-epoch pretraining schedule. This suggests that early stopping or a validation-selected pretraining checkpoint should be included in larger studies. Nevertheless, the final pretraining checkpoint still transferred effectively to supervised force-field training in this single-molecule experiment.
 
 These results should be interpreted as a proof of concept rather than a benchmark claim. The encoder is intentionally lightweight and uses invariant scalar message passing rather than full tensor-equivariant interactions. The split is chronological and limited to one molecule, one random seed and one dataset size. The reported units are the native units stored in the downloaded MD17 `.npz` file and are not converted to the units used in all published rMD17 leaderboards. Even with these limitations, the controlled scratch-versus-pretrained comparison supports the central hypothesis: latent prediction over MD trajectories can provide useful initialization for conservative neural force fields.
 
-The present experiment verifies one of two possible routes for JEPA-style force-field learning. In the verified route, both pretraining and fine-tuning use the same DFT trajectory distribution, but pretraining treats the coordinates as unlabelled and withholds the accompanying energies and forces. The improvement over a randomly initialized force field therefore demonstrates that a DFT-coordinate-only self-supervised stage can improve subsequent supervised DFT force-field learning in this ethanol setting. A second route is cross-fidelity pretraining, in which JEPA first learns from larger pools of classical, semiempirical or mixed-fidelity trajectories and is then fine-tuned only on high-level DFT labels. This route is attractive because lower-cost trajectories are easier to generate at scale, but it remains unverified in the present work and may help only when their coordinate distribution overlaps the target quantum-mechanical distribution.
+The present experiment verifies one of two possible routes for JEPA-style force-field learning. In the verified route, both pretraining and fine-tuning use the same DFT trajectory distribution, but pretraining treats the coordinates as unlabelled and withholds the accompanying energies and forces. The improvement over a randomly initialized force field therefore demonstrates that a DFT-coordinate-only self-supervised stage can improve subsequent supervised DFT force-field learning in this ethanol setting. A second route is cross-fidelity pretraining, in which a JEPA-style objective first learns from larger pools of classical, semiempirical or mixed-fidelity trajectories and is then fine-tuned only on high-level DFT labels. This route is attractive because lower-cost trajectories are easier to generate at scale, but it remains unverified in the present work and may help only when their coordinate distribution overlaps the target quantum-mechanical distribution.
 
-Future work should test whether the effect persists across all rMD17 molecules, multiple random seeds, smaller labelled-data regimes and true tensor-equivariant backbones such as NequIP or MACE. The most important next experiment is label-efficiency: if JEPA pretraining provides larger gains when only tens to hundreds of labelled DFT frames are available, it would directly address the data bottleneck that limits practical ML force-field construction.
+Future work should test whether the effect persists across all rMD17 molecules, multiple random seeds, smaller labelled-data regimes and true tensor-equivariant backbones such as NequIP or MACE. The most important next experiment is label-efficiency: if JEPA-style pretraining provides larger gains when only tens to hundreds of labelled DFT frames are available, it would directly address the data bottleneck that limits practical ML force-field construction.
 
 ## Table 1 | Test performance after 50 supervised epochs
 
 | Model | Energy MAE | Force MAE | Force RMSE | Drift proxy |
 |---|---:|---:|---:|---:|
 | Scratch | 4.266 | 1.458 | 1.963 | 1.458 |
-| JEPA initialized | 1.058 | 1.274 | 1.666 | 1.274 |
+| JEPA-style initialized | 1.058 | 1.274 | 1.666 | 1.274 |
 | Relative improvement | 75.2% | 12.6% | 15.2% | 12.6% |
 
 Metrics are reported in the native units of the downloaded MD17 ethanol `.npz` file. The drift proxy is the mean absolute force error and is included as a simple local surrogate for force-driven rollout error.
@@ -126,9 +126,9 @@ Metrics are reported in the native units of the downloaded MD17 ethanol `.npz` f
 
 ## Figure legends
 
-**Figure 1 | Force prediction scatter for scratch and JEPA-initialized models.** Predicted force components are plotted against DFT reference force components for the held-out MD17 ethanol test split. The diagonal line indicates perfect agreement. The JEPA-initialized model exhibits a lower force RMSE than the scratch baseline after the same number of supervised epochs. Source file: `results/force_scatter_50.png`.
+**Figure 1 | Force prediction scatter for scratch and JEPA-style-initialized models.** Predicted force components are plotted against DFT reference force components for the held-out MD17 ethanol test split. The diagonal line indicates perfect agreement. The JEPA-style-initialized model exhibits a lower force RMSE than the scratch baseline after the same number of supervised epochs. Source file: `results/force_scatter_50.png`.
 
-**Figure 2 | Validation force RMSE during supervised fine-tuning.** Validation force RMSE is shown for scratch and JEPA-initialized force fields across 50 supervised epochs. JEPA initialization reaches a lower best validation force RMSE (1.322) than the scratch baseline (1.596). Source file: `results/loss_curves_50.png`.
+**Figure 2 | Validation force RMSE during supervised fine-tuning.** Validation force RMSE is shown for scratch and JEPA-style-initialized force fields across 50 supervised epochs. JEPA-style initialization reaches a lower best validation force RMSE (1.322) than the scratch baseline (1.596). Source file: `results/loss_curves_50.png`.
 
 ## Methods
 
@@ -140,17 +140,17 @@ The ethanol trajectory was downloaded from the canonical sGDML/MD17 data endpoin
 
 The encoder is a compact SchNet-like network with atom embeddings, Gaussian radial basis distance features, continuous-filter message passing and layer normalization. The force-field head predicts atomic energy contributions that are summed into a molecular energy. A train-set mean energy offset is stored as a non-trainable buffer. Forces are calculated by automatic differentiation as `F = -dE/dR`, ensuring a conservative force field.
 
-### JEPA pretraining
+### JEPA-style pretraining
 
-The JEPA stage uses an online encoder, an EMA target encoder and a predictor MLP. For each molecular frame, a random subset of atoms is masked in the online branch. The target branch receives the uncorrupted frame at temporal offset `delta = 1`. The training loss is masked latent mean-squared error between predictor outputs and stop-gradient target embeddings. The default mask ratio is 0.35 and EMA decay is 0.99. The 50-epoch pretraining run wrote `checkpoints/jepa_pretrained_50.pt`.
+The JEPA-style stage uses an online encoder, an EMA target encoder and a predictor MLP. For each molecular frame, a random subset of atoms is masked in the online branch. The target branch receives the uncorrupted frame at temporal offset `delta = 1`. The training loss is masked latent mean-squared error between predictor outputs and stop-gradient target embeddings. The default mask ratio is 0.35 and EMA decay is 0.99. The 50-epoch pretraining run wrote `checkpoints/jepa_pretrained_50.pt`.
 
 ### Supervised fine-tuning
 
-Scratch and JEPA-initialized force fields were trained with the same supervised objective:
+Scratch and JEPA-style-initialized force fields were trained with the same supervised objective:
 
 `L = 0.05 * MAE(E_pred, E_ref) + MSE(F_pred, F_ref)`.
 
-Both models were trained for 50 epochs using AdamW. The scratch model was initialized randomly. The JEPA model loaded the pretrained encoder weights and initialized a fresh energy head.
+Both models were trained for 50 epochs using AdamW. The scratch model was initialized randomly. The JEPA-style model loaded the pretrained encoder weights and initialized a fresh energy head.
 
 ### Evaluation
 
