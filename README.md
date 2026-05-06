@@ -46,29 +46,9 @@ python scripts/finetune_forcefield.py --epochs 20 --pretrained checkpoints/jepa_
 python scripts/evaluate.py
 ```
 
-## GitHub Repository Setup
-
-This project is ready to publish as a small research repository. The downloaded MD17 `.npz` file and trained checkpoints are intentionally excluded from git; the workflow recreates them from the scripts.
-
-Suggested repository name:
-
-```text
-jepa-mlff
-```
-
-After creating an empty GitHub repository, initialize and push from this folder:
-
-```powershell
-git init
-git add .
-git commit -m "Initial JEPA MLFF workflow"
-git branch -M main
-git remote add origin https://github.com/blualg/jepa-mlff.git
-git push -u origin main
-```
-
-If you cite this repository in a manuscript, use the public repository URL in the manuscript's Code availability section.
-
 ## Notes
 
 This is a research scaffold, not a benchmark-optimized MLIP package. The model is intentionally small and dependency-light so the whole idea can be inspected, modified, and run on modest hardware. For serious accuracy, scale the hidden size, train longer, use larger rMD17 splits, and compare against established equivariant MLIP libraries such as NequIP or MACE.
+
+If you cite this repository in a manuscript, use the public repository URL in the manuscript's Code availability section.
+
