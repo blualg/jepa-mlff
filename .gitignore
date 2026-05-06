@@ -17,6 +17,7 @@ results/*
 !results/metrics_50.json
 !results/force_scatter_50.png
 !results/loss_curves_50.png
+!results/summary_panel_50.png
 
 # LaTeX build products
 paper/*.aux
@@ -27,7 +28,10 @@ paper/*.out
 paper/*.toc
 paper/*.synctex.gz
 paper/*.docx
+!paper/jepa_mlff_manuscript.docx
+paper/docx_page_images/
 paper/rendered_docx/
+paper/rendered_docx_current/
 paper/rendered_latex_pdf/
 
 # OS/editor noise
